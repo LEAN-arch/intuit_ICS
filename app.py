@@ -3,7 +3,7 @@
 #
 # A single-file Streamlit application for the Sr. Manager, Demand Planning.
 #
-# VERSION: Best-in-Class Strategic & AI-Integrated Edition
+# VERSION: Best-in-Class Strategic & AI-Integrated Edition (Unabridged)
 #
 # This dashboard provides a real-time, strategic view of Intuit's demand and supply
 # ecosystem across the Consumer (TurboTax) and Small Business (QuickBooks) groups.
@@ -18,10 +18,10 @@
 #   - Strategic Program Management & Risk Assessment
 #
 # To Run:
-# 1. Save this code as 'intuit_demand_planning_dashboard.py'
+# 1. Save this code as 'intuit_demand_planning_final.py'
 # 2. Create 'requirements.txt' with specified libraries.
 # 3. Install dependencies: pip install -r requirements.txt
-# 4. Run from your terminal: streamlit run intuit_demand_planning_dashboard.py
+# 4. Run from your terminal: streamlit run intuit_demand_planning_final.py
 #
 # ======================================================================================
 
@@ -82,8 +82,8 @@ def generate_master_data():
     forecast_dates = pd.to_datetime(pd.date_range(start='2022-01-01', periods=104, freq='W-SUN'))
     forecast_df = pd.DataFrame({'Week': forecast_dates})
     forecast_df['Marketing_Spend_M_USD'] = np.random.uniform(5, 20, 104) * (1 + np.sin(np.arange(104) * (2 * np.pi / 52)) * 0.5)
-    forecast_df['Macro_Economic_Index'] = np.linspace(100, 95, 104) + np.random.normal(0, 1, 104) # Simulates a slight downturn
-    forecast_df['Competitor_SOV_Pct'] = np.random.uniform(20, 35, 104) # Share of Voice
+    forecast_df['Macro_Economic_Index'] = np.linspace(100, 95, 104) + np.random.normal(0, 1, 104)
+    forecast_df['Competitor_SOV_Pct'] = np.random.uniform(20, 35, 104)
     forecast_df['Is_Tax_Season'] = ((forecast_df['Week'].dt.month.isin([1,2,3,4]))).astype(int)
     forecast_df['New_Signups_K'] = (forecast_df['Marketing_Spend_M_USD']*10 - forecast_df['Competitor_SOV_Pct']*2 + forecast_df['Macro_Economic_Index']*0.5 + forecast_df['Is_Tax_Season']*50 + np.random.normal(0, 10, 104) + 50).clip(20)
 
@@ -149,7 +149,7 @@ def plot_clickstream_funnel(df):
         y=df['Stage'],
         x=df['Users'],
         texttemplate="%{value:,d} <br>Dropoff: %{customdata[0]:.1f}%",
-        textinfo="value+customdata",
+        textinfo="value",
         customdata=df[['Dropoff_Rate']]
     ))
     fig.update_layout(title="<b>Clickstream Funnel Analysis: New User Onboarding</b>")
@@ -228,14 +228,12 @@ with tab3:
     marketing_adj = col1.slider("Marketing Spend Adjustment (%)", -50, 50, 0)
     macro_adj = col2.slider("Macro-Economic Index Adjustment (pts)", -10, 10, 0)
     competitor_adj = col3.slider("Competitor SOV Adjustment (pts)", -10, 10, 0)
-    
     baseline_pred = forecast_model.predict(X_test)
     adjusted_X = X_test.copy()
     adjusted_X['Marketing_Spend_M_USD'] *= (1 + marketing_adj/100)
     adjusted_X['Macro_Economic_Index'] += macro_adj
     adjusted_X['Competitor_SOV_Pct'] += competitor_adj
     adjusted_pred = forecast_model.predict(adjusted_X)
-    
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=y_test.index, y=baseline_pred, name='Baseline Forecast', mode='lines', line=dict(color='grey', dash='dash')))
     fig.add_trace(go.Scatter(x=y_test.index, y=adjusted_pred, name='Scenario Forecast', mode='lines', line=dict(color='blue', width=3)))
@@ -252,7 +250,6 @@ with tab4:
         - **Method:** A rolling statistical process control (SPC) logic is applied to the time-series data. The model calculates a rolling average and standard deviation over a defined window (e.g., 12 weeks). An 'anomaly' is flagged if a data point falls outside of a specified threshold (e.g., ±3 standard deviations) from the rolling mean.
         - **Interpretation:** The red dots automatically flag weeks where signups were statistically unusual. This serves as an early warning system. An unexpected negative anomaly could indicate a critical bug in the signup flow, a competitor's surprise campaign, or a website outage. An unexpected positive anomaly might highlight a viral social media mention or a highly effective new ad creative that should be doubled-down on. This automates insight generation and accelerates business response.
         """)
-    
     df = forecast_df.copy()
     df = df.set_index('Week')
     rolling_mean = df['New_Signups_K'].rolling(window=12).mean()
@@ -260,7 +257,6 @@ with tab4:
     df['upper_band'] = rolling_mean + (rolling_std * 3)
     df['lower_band'] = rolling_mean - (rolling_std * 3)
     anomalies = df[(df['New_Signups_K'] > df['upper_band']) | (df['New_Signups_K'] < df['lower_band'])]
-    
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.index, y=df['New_Signups_K'], name='Actual New Signups', mode='lines', line=dict(color='black')))
     fig.add_trace(go.Scatter(x=df.index, y=df['upper_band'], name='Anomaly Threshold', mode='lines', line=dict(color='rgba(0,119,197,0.3)')))
