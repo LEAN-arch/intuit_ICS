@@ -3,7 +3,7 @@
 #
 # A single-file Streamlit application for the Sr. Manager, Efficiency & Annual Planning.
 #
-# VERSION: Best-in-Class Strategic & AI-Integrated Edition (Unabridged)
+# VERSION: Best-in-Class Strategic & AI-Integrated Edition (Final, Unabridged)
 #
 # This dashboard provides a real-time, strategic view of Intuit's demand and supply
 # ecosystem across the Consumer (TurboTax) and Small Business (QuickBooks) groups.
