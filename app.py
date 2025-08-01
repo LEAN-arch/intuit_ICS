@@ -3,7 +3,7 @@
 #
 # A single-file Streamlit application for the Sr. Manager, Efficiency & Annual Planning.
 #
-# VERSION: Best-in-Class Strategic & AI-Integrated Edition (Final, Unabridged)
+# VERSION: Best-in-Class Strategic & AI-Integrated Edition (Corrected)
 #
 # This dashboard provides a real-time, strategic view of Intuit's demand and supply
 # ecosystem across the Consumer (TurboTax) and Small Business (QuickBooks) groups.
@@ -59,16 +59,12 @@ INTUIT_COLORS = {'blue': '#0077C5', 'green': '#00855A', 'orange': '#FF6B00', 're
 def generate_master_data():
     np.random.seed(42)
     dates = pd.to_datetime(pd.date_range(start='2023-01-01', periods=52, freq='W-SUN'))
-    
-    # 1. AOP Data
     aop_data = {
         'Segment': ['TurboTax', 'QuickBooks'], 'Top_Down_Target_Users_M': [100, 12.5],
         'Bottom_Up_Plan_Users_M': [98.5, 12.3], 'AOP_Headcount_Plan': [5000, 7500],
         'AOP_Budget_M_USD': [1500, 2200]
     }
     aop_df = pd.DataFrame(aop_data)
-
-    # 2. Defect Data
     defects = ['Login Failure', 'Payment Error', 'QBO-Bank Sync', 'Tax Form Import', 'Mobile Crash']
     defect_data = []
     for week in dates:
@@ -77,29 +73,20 @@ def generate_master_data():
             defect_data.append({'Week': week, 'Defect_Category': defect, 'Contact_Volume': np.random.randint(base_vol*0.8, base_vol*1.2) * (1 - (week - dates[0]).days / 500) })
     defect_df = pd.DataFrame(defect_data)
     defect_df['Cost_Impact_USD'] = defect_df['Contact_Volume'] * np.random.uniform(20, 40)
-
-    # 3. Forecast Model Data
     forecast_dates = pd.to_datetime(pd.date_range(start='2022-01-01', periods=104, freq='W-SUN'))
     forecast_df = pd.DataFrame({'Week': forecast_dates, 'Segment': ['TurboTax', 'QuickBooks'] * 52})
     forecast_df['Marketing_Spend_M_USD'] = np.random.uniform(5, 20, 104) * (1 + np.sin(np.arange(104) * (2 * np.pi / 52)) * 0.5)
     forecast_df['Is_Tax_Season'] = ((forecast_df['Week'].dt.month.isin([1,2,3,4]))).astype(int)
     forecast_df['New_Signups_K'] = (forecast_df['Marketing_Spend_M_USD']*10 + forecast_df['Is_Tax_Season']*50 + np.random.normal(0, 10, 104) + 50).clip(20)
     forecast_df['New_Signups_K'] = np.where(forecast_df['Segment'] == 'QuickBooks', forecast_df['New_Signups_K'] / 5, forecast_df['New_Signups_K'])
-
-    # 4. Marketing Channel Data
     channels = ['Paid Search', 'Social Media', 'Content Marketing', 'TV', 'Affiliates']
     marketing_data = {'Channel': channels, 'Spend_M_USD': [50, 25, 15, 75, 10], 'Acquisitions_K': [250, 150, 90, 300, 60]}
     marketing_df = pd.DataFrame(marketing_data)
     marketing_df['ROAS'] = (marketing_df['Acquisitions_K'] * 1000 * 150) / (marketing_df['Spend_M_USD'] * 1_000_000)
-
-    # 5. Customer Support Metrics
     support_metrics_data = {'Week': dates, 'Avg_Handle_Time_Sec': np.random.normal(480, 30, 52) * np.linspace(1, 0.85, 52), 'First_Contact_Resolution_Pct': np.random.normal(75, 5, 52) * np.linspace(1, 1.1, 52)}
     support_df = pd.DataFrame(support_metrics_data)
-
-    # 6. AI Opportunity Scoring
     ai_opp_data = {'Process': ['Contact Deflection', 'Fraud Detection', 'Churn Prediction', 'KB Article Generation', 'Marketing Budget Allocation', 'Tax Code Search'], 'Business_Unit': ['Shared', 'Shared', 'QuickBooks', 'Shared', 'Shared', 'TurboTax'], 'Impact_Score_100': [85, 95, 90, 70, 80, 92], 'Feasibility_Score_100': [90, 75, 70, 85, 60, 65]}
     ai_opp_df = pd.DataFrame(ai_opp_data)
-    
     return aop_df, defect_df, forecast_df, marketing_df, support_df, ai_opp_df
 
 # ======================================================================================
@@ -146,9 +133,14 @@ def plot_marketing_mix_roas(df):
     return fig
 
 def plot_support_kpi_dashboard(df):
-    fig = make_subplots(rows=1, cols=2, subplot_titles=('Avg. Handle Time (AHT)', 'First Contact Resolution (FCR)'))
-    fig.add_trace(go.Indicator(mode="number+delta", value=df['Avg_Handle_Time_Sec'].iloc[-1], title="AHT (sec)", delta={'reference': df['Avg_Handle_Time_Sec'].mean(), 'decreasing': {'color': INTUIT_COLORS['green']}, 'increasing': {'color': INTUIT_COLORS['red']}}), 1, 1)
-    fig.add_trace(go.Indicator(mode="number+delta", value=df['First_Contact_Resolution_Pct'].iloc[-1], title="FCR (%)", number={'suffix': '%'}, delta={'reference': df['First_Contact_Resolution_Pct'].mean()}), 1, 2)
+    # --- FIX: Added specs to define the subplot types as 'indicator' ---
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=('Avg. Handle Time (AHT)', 'First Contact Resolution (FCR)'),
+        specs=[[{"type": "indicator"}, {"type": "indicator"}]]
+    )
+    fig.add_trace(go.Indicator(mode="number+delta", value=df['Avg_Handle_Time_Sec'].iloc[-1], title={"text": "AHT (sec)"}, delta={'reference': df['Avg_Handle_Time_Sec'].mean(), 'decreasing': {'color': INTUIT_COLORS['green']}, 'increasing': {'color': INTUIT_COLORS['red']}}), row=1, col=1)
+    fig.add_trace(go.Indicator(mode="number+delta", value=df['First_Contact_Resolution_Pct'].iloc[-1], title={"text": "FCR (%)"}, number={'suffix': '%'}, delta={'reference': df['First_Contact_Resolution_Pct'].mean()}), row=1, col=2)
     return fig
     
 def plot_marketing_optimizer(df, budget):
